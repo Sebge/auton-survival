@@ -2,7 +2,7 @@
 name = "auton-survival"
 version = "0.1.0"
 description = ""
-authors = ["Chirag Nagpal <chiragn@cs.cmu.edu>"]
+authors = [{name="Chirag Nagpal", email="chiragn@cs.cmu.edu"}]
 readme = "README.md"
 packages = [{include = "auton_survival"}]
 requires-python = ">=3.10"
