@@ -5,7 +5,7 @@ description = ""
 authors = [{name="Chirag Nagpal", email="chiragn@cs.cmu.edu"}]
 readme = "README.md"
 packages = [{include = "auton_survival"}]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
 dependencies= [
 "torch (>=1.13)",
