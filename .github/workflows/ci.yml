@@ -3,8 +3,6 @@ name: CI
 on:
   push:
     branches: [ master ]
-  pull_request:
-    branches: [ master ]
 
 
 jobs:
@@ -13,17 +11,17 @@ jobs:
     strategy:
         fail-fast: true
         matrix:
-          python-version: ["3.8", "3.9", "3.10"]
+          python-version: ["3.8", "3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
 
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{matrix.python-version}}
 
     - name: Install Python Poetry
-      uses: abatilo/actions-poetry@v2.3.0
+      uses: abatilo/actions-poetry@v3
 
     - name: Configure poetry
       shell: bash
@@ -39,69 +37,3 @@ jobs:
     - name: Test
       run: poetry run python3 -m unittest discover
     
-  Release:
-    needs: Quality
-    if: |
-      github.repository == 'autonlab/auton-survival' && 
-      github.event_name == 'push' && 
-      github.ref == 'refs/heads/master' && 
-      !contains ( github.event.head_commit.message, 'chore(release)' )
-
-    runs-on: ubuntu-latest
-    concurrency: release
-    permissions:
-      id-token: write
-      contents: write
-
-    steps:
-      - uses: actions/setup-python@v3
-        with:
-          python-version: 3.8
-
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
-      - name: Check release status
-        id: release-status
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          pip install python-semantic-release
-          if semantic-release --noop --strict version
-          then
-            echo "Releasing new version."
-          else
-            echo "Skipping release steps."
-          fi
-
-      - if: steps.release-status.outputs.released == 'true'
-        name: Release to GitHub
-        id: github-release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          semantic-release version
-          git fetch --tags
-          for file in ./dist/**
-            do gh release upload "${{steps.release-status.outputs.tag}}" $file
-          done
-        
-      - if: steps.release-status.outputs.released == 'true'
-        name: Release to Test PyPI
-        id: test-pypi-release
-        env:
-          TEST_PYPI_TOKEN: ${{ secrets.TEST_PYPI_TOKEN }}
-        run: |
-          poetry config repositories.test-pypi https://test.pypi.org/legacy/
-          poetry config pypi-token.test-pypi $TEST_PYPI_TOKEN
-          poetry publish -r test-pypi -u __token__
-
-      - if: steps.release-status.outputs.released == 'true'
-        name: Release to PyPI
-        id: pypi-release
-        env:
-          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
-        run: |
-          poetry config pypi-token.pypi $PYPI_TOKEN
-          poetry publish
